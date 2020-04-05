@@ -1,0 +1,23 @@
+
+
+#cardDisplay{
+  display:flex;
+  border: 3px solid #00AEEF;
+  padding: 50px;
+  margin: 20px;
+  border-radius: 15px;
+}
+
+#cardDisplay:hover{
+  border: 5px solid white;
+  padding: 60px;
+  margin: 10px;
+  background-color: #00AEEF;
+}
+
+#cardDisplay:active{
+  border: 5px solid white;
+  padding: 60px;
+  margin: 10px;
+  background-color: #00AEEF;
+}
