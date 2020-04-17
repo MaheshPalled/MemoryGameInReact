@@ -5,6 +5,7 @@ import {
 } from 'reactstrap';
 import './App.css';
 import CardCreator from "./Component/CardCreator";
+import Thankyou from './Component/Thankyou';
 import { BrowserRouter, Route, Link } from "react-router-dom";
 
 
@@ -19,6 +20,7 @@ class App extends Component {
     this.handleModal = this.handleModal.bind(this);
   }
 
+
   handleModal(event) {
     this.setState({
       modalOpen: !this.state.modalOpen,
@@ -27,14 +29,10 @@ class App extends Component {
   }
 
   render() {
+    const profile = this.state.userName;
     const HomePage = () => {
       return (
         <div>
-          <Jumbotron>
-            <div className="container">
-              <h4>Welcome to the Online memory game {this.state.userName}</h4>
-            </div>
-          </Jumbotron>
           <Modal isOpen={this.state.modalOpen} toggle={this.handleModal}>
             <ModalHeader toggle={this.handleModal}>Enter player name</ModalHeader>
             <ModalBody>
@@ -44,8 +42,13 @@ class App extends Component {
                   <Input type="text" id="username" name="username"
                     innerRef={input => this.userName = input} />
                 </FormGroup>
-                <Link to='/game'>
-                  <Button type="submit" value="submit" color="primary">Continue.!!</Button>
+                <Link to={{
+                  pathname: '/game',
+                  state: {
+                    playerName: { profile }
+                  }
+                }}>
+                  <Button type="submit" value="submit" color="primary" onClick={this.handleModal}>Continue.!!</Button>
                 </Link>
               </Form>
             </ModalBody>
@@ -55,12 +58,20 @@ class App extends Component {
     }
 
     return (
-      <BrowserRouter>
-        <div className="App">
-          <Route path='/' component={HomePage} />
-          <Route path='/game' component={CardCreator} />
-        </div>
-      </BrowserRouter>
+      <React.Fragment>
+        <Jumbotron>
+          <div className="container">
+            <h4>Welcome to the Online memory game {this.state.userName}</h4>
+          </div>
+        </Jumbotron>
+        <BrowserRouter>
+          <div className="App">
+            <Route path='/' exact component={HomePage} />
+            <Route path='/game' exact component={CardCreator} />
+            <Route path='/thankyou' exact component={Thankyou} />
+          </div>
+        </BrowserRouter>
+      </React.Fragment>
     )
   }
 }

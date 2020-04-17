@@ -1,5 +1,5 @@
-import React, { Component } from "react";
-import { Button, Row, Col, Card } from "reactstrap";
+import React, {Component} from "react";
+import { Button, Row, Col, Card, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { Link } from "react-router-dom";
 
 
@@ -12,32 +12,43 @@ class CardCreator extends Component {
             level: 3,
             areCardsDislpayed:false,
             delectedCard: '',
-            selectedCardPair: []
+            selectedCardPair: [],
+            isGameOver:false,
+            totalAttempts:0
         }
-
         this.setNextLevel = this.setNextLevel.bind(this);
         this.resetGame = this.resetGame.bind(this);
         this.buildMyCard = this.buildMyCard.bind(this);
         this.flipCard = this.flipCard.bind(this);
+        this.gameOver = this.gameOver.bind(this);
     }
+
 
     setNextLevel() {
         this.setState({
             level: this.state.level + 1,
-            selectedCardPair:[]
+            selectedCardPair:[],
+            totalAttempts:0,
+            modalDecision:false,
+            isGameOver:false
         })
-        this.buildMyCard();
+        cardContent= [];
     }
 
     resetGame() {
         this.setState({
             level: 3,
-            areCardsDislpayed:false
+            areCardsDislpayed:false,
+            totalAttempts:0
         })
         cardContent=[];
     }
 
-  
+    gameOver(cardObject){
+            this.setState({
+                isGameOver:cardObject.every((card)=>card.isMatched===true)
+         });
+    }
 
     buildMyCard(){
         let currentLevel = this.state.level;
@@ -77,40 +88,52 @@ class CardCreator extends Component {
 
     flipCard(card) {
         let tempCardContent;
-        if (this.state.selectedCardPair.length === 2 ){
+        this.setState(previousState => ({
+            selectedCardPair: [...previousState.selectedCardPair, card.value],
+            totalAttempts:this.state.totalAttempts +1
+        }));
+        console.log("value  "+this.state.selectedCardPair);
+        if (this.state.selectedCardPair.length ===2 ){
             let isMatchedValue = this.state.selectedCardPair.reduce((accum,data) => accum===data?true:false);
-            console.log("value for is matched "+isMatchedValue);
+            console.log("matching "+isMatchedValue);
                 tempCardContent=cardContent.map(mycard=>{
-                    if (mycard.id===card.id){
-                            mycard.isOpen=!mycard.isOpen;
+                    if (isMatchedValue && mycard.isOpen && !mycard.isMatched){
+                        console.log("inside if condition for card id : "+mycard.id);
+                            mycard.isMatched= isMatchedValue;
                             return mycard
+                    }
+                    else if (mycard.isOpen && !mycard.isMatched){
+                        console.log("inside 1st else if condition for card id : "+mycard.id);
+                        mycard.isOpen=!mycard.isOpen;
+                        return mycard
+                    }
+                    else if(mycard.id===card.id && !mycard.isMatched){
+                        console.log("inside 2nd else if condition for card id : "+mycard.id);
+                        mycard.isOpen=!mycard.isOpen;
+                        return mycard;
                     }
                     return mycard;
                 });
-
                 this.setState({
-                    selectedCardPair: [card.value]
+                    selectedCardPair: [card.value],
                 });
             }   
 
-            else {
-                this.setState(previousState => ({
-                    selectedCardPair: [...previousState.selectedCardPair, card.value]
-                }));
+            else {               
                 tempCardContent=cardContent.map(mycard=>{
-                    if (mycard.id===card.id){
+                    if (mycard.id===card.id && !card.isMatched){
                          mycard.isOpen=!mycard.isOpen;
                          return mycard;
                     }
                     return mycard;
                 });
-
             }
-           
 
+       cardContent=tempCardContent.filter(card=>{
+           return card!=null;
+       });
 
-       
-       cardContent=tempCardContent;
+       this.gameOver(cardContent);
 
        console.log(" card content : " + JSON.stringify(cardContent));
     }
@@ -137,22 +160,37 @@ class CardCreator extends Component {
 
         return (
             <div className="container">
-                <Row className="container" id="actionButton">
-                    <Col className="col-2">
-                        <Link to='/'>
-                            <Button onClick={this.resetGame} color="secondary"> Back </Button>
-                        </Link>
+                <Row top="true" sticky="true" className="container " id="userDetails">
+                    <Col>
+                        <h4 id="userScore">
+                        Number of clicks made: {this.state.totalAttempts}
+                        </h4>
                     </Col>
-                    <Col className="col-2">
-                        <Button onClick={this.buildMyCard} color="primary"> Begin > </Button>
-                    </Col>
-                    <Col className="col-2">
-                        <Button onClick={this.setNextLevel} color="warning"> Next level</Button>
+
+                    <Col>
+                        <h4 id="userLevel">
+                        Level: {this.state.level -2}
+                        </h4>
                     </Col>
                 </Row>
+                <Row className="container" id="actionButton">
+                    <Col>
+                        <Link to='/'>
+                            <Button onClick={this.resetGame} color="secondary"> RESTART WITH NEW PLAYER NAME </Button>
+                        </Link>
+                    </Col>
+                    <Col>
+                        <Button onClick={this.buildMyCard} color="primary"> LET'S BEGIN THE LEVEL-{this.state.level-2} GAME > </Button>
+                    </Col>
+                   
+                </Row>
+                
                 <Row className="container">
                     {showCards}
                 </Row>
+
+                <ModalDisplay nextLevel={this.setNextLevel} level={this.state.level-2} 
+                numClick={this.state.totalAttempts} modalDecision={this.state.isGameOver}/>
             </div>
         );
     }
@@ -168,9 +206,9 @@ function CreteACard(props){
         )
     }
 
-    else if (props.isOpen && props.isMatched){
+    else if (props.isMatched){
         return(
-            <img src='../../assets/angryBird.gif' alt='Angry bird' width='140px' height='140px'/>
+            <img src='../../assets/matched.gif' alt='Angry bird' width='140px' height='140px'/>
         )
     }
     
@@ -182,4 +220,29 @@ function CreteACard(props){
     )
 }
 
+
+
+function ModalDisplay(props){
+    return(
+        <Modal isOpen={props.modalDecision} toggle={props.nextLevel}>
+            <ModalHeader> <h1> Congratulations....! </h1></ModalHeader>
+            <ModalBody className="container">
+                <Row> <h4> Hurraay.....!</h4></Row>
+                <Row> <h4>Congratulation. you did solve the level  with  attempts</h4> </Row>
+                <Row><h4> Let's lern somemore lo</h4></Row>
+                <Row>
+                    <Link to="/thankyou">
+                        <Col>
+                            <Button color="secondary">I'M DONE</Button>
+                        </Col>
+                    </Link>
+                    <Col>
+                    <Button color="primary" onClick={props.nextLevel}>LET'S TRY NEXT LEVEL</Button>
+                    </Col>
+                </Row>
+              
+            </ModalBody>
+          </Modal>
+    )
+}
 export default CardCreator;
